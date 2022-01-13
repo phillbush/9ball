@@ -13,7 +13,7 @@
 #define FACT            1024
 #define WIDTH           (TILESX * FACT)
 #define HEIGHT          (TILESY * FACT)
-#define MINCAPTURED     0.70
+#define MINCAPTURED     0.60
 #define MAXBALLS        50
 
 /* default colors */
@@ -622,7 +622,7 @@ keyboardthread(void *)
 	}
 }
 
-/* 9ball: build walls to capture 70% of the grid without touching the balls */
+/* 9ball: build walls to capture 60% of the grid without touching the balls */
 void
 threadmain(int, char *[])
 {
