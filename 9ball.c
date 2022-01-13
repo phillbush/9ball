@@ -474,6 +474,8 @@ gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int
 			if((balls[i].dx > 0 && !tiles[x - 1][y]) ||
 			   (balls[i].dx < 0 && !tiles[x + 1][y]))
 				by = 0;
+			if(!bx && !by)
+				bx = by = 1;
 			if(bx)
 				balls[i].dx *= -1;
 			if(by)
