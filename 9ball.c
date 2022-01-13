@@ -338,14 +338,14 @@ gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int
 		if(wall->o == VERT){
 			for(i = wall->p.y + wall->s0; i <= wall->p.y; i++){
 				if(hasball(balls, nballs, wall->p.x, i)){
-					life--;
+					life = -1;
 					wall->e0 = EXT_INACTIVE;
 				}
 			}
 		}else{
 			for(i = wall->p.x + wall->s0; i <= wall->p.x; i++){
 				if(hasball(balls, nballs, i, wall->p.y)){
-					life--;
+					life = -1;
 					wall->e0 = EXT_INACTIVE;
 				}
 			}
@@ -356,14 +356,14 @@ gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int
 		if(wall->o == VERT){
 			for(i = wall->p.y; i <= wall->p.y + wall->s1; i++){
 				if(hasball(balls, nballs, wall->p.x, i)){
-					life--;
+					life = -1;
 					wall->e1 = EXT_INACTIVE;
 				}
 			}
 		}else{
 			for(i = wall->p.x; i <= wall->p.x + wall->s1; i++){
 				if(hasball(balls, nballs, i, wall->p.y)){
-					life--;
+					life = -1;
 					wall->e1 = EXT_INACTIVE;
 				}
 			}
