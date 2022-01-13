@@ -1,7 +1,7 @@
 # 9ball
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/63266536/149038199-6d7da035-79ef-4b21-be99-1bd98e12046f.png", title="demo"/>
+  <img src="https://user-images.githubusercontent.com/63266536/149276658-7b7e1a59-c3b9-4b59-9d4b-0bb9e51d0520.png", title="demo"/>
 </p>
 
 Capture 70% of the grid without touching the balls!
