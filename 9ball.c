@@ -555,6 +555,7 @@ gamethread(void *)
 		else
 			lvl = 1;
 		nlives = nballs = newlvl(balls, lvl);
+		wall.e0 = wall.e1 = EXT_INACTIVE;
 		haswon = 0;
 	}
 }
