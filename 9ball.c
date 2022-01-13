@@ -16,47 +16,56 @@
 #define MINCAPTURED     0.70
 #define MAXBALLS        50
 
-#define COLOR_BALL      DGreen
-#define COLOR_BOARD     DYellow
+/* default colors */
+#define COLOR_BALL      DMedgreen
+#define COLOR_BOARD     DPurpleblue
 #define COLOR_WALL      DBlack
 #define COLOR_EXT0      DBlue
 #define COLOR_EXT1      DRed
 #define COLOR_BARBG     DWhite
 #define COLOR_BARFG     DBlack
 
+/* orientation of the cursor */
 enum Orientation {
 	HORZ,
 	VERT,
 };
 
-enum WallStatus {
-	WALL_INACTIVE = -1,
-	WALL_BUILDING = 0,
-	WALL_BUILT    = 1,
+/* building status of a wall extension */
+enum Extension {
+	EXT_INACTIVE = -1,
+	EXT_BUILDING = 0,
+	EXT_BUILT    = 1,
 };
 
+/* a ball is given by a point and the direction */
 struct Ball {
 	Point p;                /* position of top-left corner of square around ball */
-	int dx, dy;             /* ball speed */
+	int dx, dy;             /* ball direction */
 };
 
+/* the wall being constructed */
 struct Wall {
 	Point p;                /* position of wall */
 	int s0, s1;             /* size of wall; s0 goes negative, while s1 goes positive */
-	enum WallStatus e0, e1; /* status of each wall extension */
+	enum Extension e0, e1;  /* status of each wall extension */
 	enum Orientation o;     /* orientation of wall */
 };
 
+/* button-1 click info given from the mouse thread to the game thread */
 struct Click {
 	Point p;                /* position of click */
 	enum Orientation o;     /* orientation of cursor */
 };
 
-Channel *drawc, *clickc;
+/* global variables */
+Channel *drawc;                 /* used by the resize and clock threads to inform the game thread to redraw stuff */
+Channel *clickc;                /* used by the mouse thread to inform the game thread that a button-1 click was performed */
 Image *ballimg, *boardimg, *wallimg, *ext0img, *ext1img, *barbgimg, *barfgimg;
 Mousectl *mctl;
 Keyboardctl *kctl;
 
+/* horizontal double-arrow cursor */
 Cursor horz = {
 	{-8, -8},
 	{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -71,6 +80,7 @@ Cursor horz = {
 	},
 };
 
+/* vertical double-arrow cursor */
 Cursor vert = {
 	{-8, -8},
 	{ 0x00, 0x00, 0x01, 0x80, 0x03, 0xc0, 0x07, 0xe0,
@@ -85,6 +95,7 @@ Cursor vert = {
 	},
 };
 
+/* call allocimage(2) checking for error */
 static Image *
 eallocimage(Rectangle r, ulong chan, int repl, ulong col)
 {
@@ -95,6 +106,7 @@ eallocimage(Rectangle r, ulong chan, int repl, ulong col)
 	return img;
 }
 
+/* initialize color images */
 static void
 initimgs(void)
 {
@@ -107,6 +119,7 @@ initimgs(void)
 	barfgimg = eallocimage(Rect(0,0,1,1), screen->chan, 1, COLOR_BARFG);
 }
 
+/* close channels, keyboard, mouse, and display; and exit the threads */
 static void
 terminate(void)
 {
@@ -118,6 +131,7 @@ terminate(void)
 	threadexitsall(nil);
 }
 
+/* set as 1 (captured) the borders of the board */
 static void
 tilesinit(int tiles[TILESX][TILESY])
 {
@@ -129,6 +143,7 @@ tilesinit(int tiles[TILESX][TILESY])
 		tiles[0][i] = tiles[TILESX - 1][i] = 1;
 }
 
+/* set as 0 (not captured) the interior of the board */
 static void
 tilesclear(int tiles[TILESX][TILESY])
 {
@@ -141,6 +156,7 @@ tilesclear(int tiles[TILESX][TILESY])
 	}
 }
 
+/* compute size of the board; called after resizing the window */
 static void
 boardcalc(Point *p, int *s)
 {
@@ -162,6 +178,7 @@ boardcalc(Point *p, int *s)
 	}
 }
 
+/* check whether there is a ball in the given x, y position */
 static int
 hasball(struct Ball *balls, int nballs, int x, int y)
 {
@@ -173,6 +190,7 @@ hasball(struct Ball *balls, int nballs, int x, int y)
 	return 0;
 }
 
+/* draw board and everything in it */
 static void
 boarddraw(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, Point *orig, int fact, int nballs)
 {
@@ -183,7 +201,7 @@ boarddraw(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, Poin
 	draw(screen, screen->r, boardimg, nil, ZP);
 
 	/* draw wall extensions */
-	if(wall->e0 == WALL_BUILDING){
+	if(wall->e0 == EXT_BUILDING){
 		if(wall->o == HORZ){
 			r.max.x = orig->x + wall->p.x * fact;
 			r.max.y = orig->y + wall->p.y * fact + fact;
@@ -198,7 +216,7 @@ boarddraw(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, Poin
 			draw(screen, r, ext0img, nil, ZP);
 		}
 	}
-	if(wall->e1 == WALL_BUILDING){
+	if(wall->e1 == EXT_BUILDING){
 		if(wall->o == HORZ){
 			r.min.x = orig->x + wall->p.x * fact;
 			r.min.y = orig->y + wall->p.y * fact;
@@ -235,6 +253,7 @@ boarddraw(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, Poin
 	}
 }
 
+/* draw the status bar */
 static void
 statusdraw(int lvl, int nlives, double captured)
 {
@@ -254,6 +273,7 @@ statusdraw(int lvl, int nlives, double captured)
 	string(screen, p, barfgimg, ZP, font, buf);
 }
 
+/* place balls in the board; called when changing the level */
 static int
 newlvl(struct Ball *balls, int lvl)
 {
@@ -261,7 +281,7 @@ newlvl(struct Ball *balls, int lvl)
 	int i;
 
 	nballs = lvl + 1;
-	if (nballs > MAXBALLS)
+	if(nballs > MAXBALLS)
 		nballs = MAXBALLS;
 	for(i = 0; i < nballs; i++){
 		balls[i].p.x = 4 + ntruerand(TILESX - 8);
@@ -272,6 +292,7 @@ newlvl(struct Ball *balls, int lvl)
 	return nballs;
 }
 
+/* get position in the board (in TILESX * TILESY) given a position in the window */
 static Point
 gettile(Point click, Point orig, int fact)
 {
@@ -286,6 +307,7 @@ gettile(Point click, Point orig, int fact)
 	return p;
 }
 
+/* get ratio of captured inner tiles (not counting the boarders) per number of tiles */
 static double
 getcaptured(int tiles[TILESX][TILESY])
 {
@@ -310,90 +332,86 @@ gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int
 
 	life = 0;
 
-	/* build wall */
-	if(wall->e0 == WALL_BUILDING){
-		if(wall->o == VERT){
-			i = wall->p.y + wall->s0;
-			if(tiles[wall->p.x][i]){
-				for(j = i; j <= wall->p.y; j++)
-					tiles[wall->p.x][j] = 1;
-				wall->e0 = WALL_BUILT;
-			}
-		}else{
-			i = wall->p.x + wall->s0;
-			if(tiles[i][wall->p.y]){
-				for(j = i; j <= wall->p.x; j++)
-					tiles[j][wall->p.y] = 1;
-				wall->e0 = WALL_BUILT;
-			}
-		}
-		if (wall->e0 == WALL_BUILDING){
-			wall->s0--;
-		}
-	}
-	if(wall->e1 == WALL_BUILDING){
-		if(wall->o == VERT){
-			i = wall->p.y + wall->s1;
-			if(tiles[wall->p.x][i]){
-				for(j = wall->p.y; j <= i; j++)
-					tiles[wall->p.x][j] = 1;
-				wall->e1 = WALL_BUILT;
-			}
-		}else{
-			i = wall->p.x + wall->s1;
-			if(tiles[i][wall->p.y]){
-				for(j = wall->p.x; j <= i; j++)
-					tiles[j][wall->p.y] = 1;
-				wall->e1 = WALL_BUILT;
-			}
-		}
-		if (wall->e1 == WALL_BUILDING){
-			wall->s1++;
-		}
-	}
-
-	/* check if ball crosses a building wall */
-	if (wall->e0 == WALL_BUILDING){
+	/* extend extension and check if ball crosses them */
+	if(wall->e0 == EXT_BUILDING){
+		wall->s0--;
 		if(wall->o == VERT){
 			for(i = wall->p.y + wall->s0; i <= wall->p.y; i++){
 				if(hasball(balls, nballs, wall->p.x, i)){
 					life--;
-					wall->e0 = WALL_INACTIVE;
+					wall->e0 = EXT_INACTIVE;
 				}
 			}
 		}else{
 			for(i = wall->p.x + wall->s0; i <= wall->p.x; i++){
 				if(hasball(balls, nballs, i, wall->p.y)){
 					life--;
-					wall->e0 = WALL_INACTIVE;
+					wall->e0 = EXT_INACTIVE;
 				}
 			}
 		}
 	}
-	if (wall->e1 == WALL_BUILDING){
+	if(wall->e1 == EXT_BUILDING){
+		wall->s1++;
 		if(wall->o == VERT){
 			for(i = wall->p.y; i <= wall->p.y + wall->s1; i++){
 				if(hasball(balls, nballs, wall->p.x, i)){
 					life--;
-					wall->e1 = WALL_INACTIVE;
+					wall->e1 = EXT_INACTIVE;
 				}
 			}
 		}else{
 			for(i = wall->p.x; i <= wall->p.x + wall->s1; i++){
 				if(hasball(balls, nballs, i, wall->p.y)){
 					life--;
-					wall->e1 = WALL_INACTIVE;
+					wall->e1 = EXT_INACTIVE;
 				}
+			}
+		}
+	}
+
+	/* check if each extension was built */
+	if(wall->e0 == EXT_BUILDING){
+		if(wall->o == VERT){
+			i = wall->p.y + wall->s0;
+			if(tiles[wall->p.x][i]){
+				for(j = i; j <= wall->p.y; j++)
+					tiles[wall->p.x][j] = 1;
+				wall->e0 = EXT_BUILT;
+			}
+		}else{
+			i = wall->p.x + wall->s0;
+			if(tiles[i][wall->p.y]){
+				for(j = i; j <= wall->p.x; j++)
+					tiles[j][wall->p.y] = 1;
+				wall->e0 = EXT_BUILT;
+			}
+		}
+	}
+	if(wall->e1 == EXT_BUILDING){
+		if(wall->o == VERT){
+			i = wall->p.y + wall->s1;
+			if(tiles[wall->p.x][i]){
+				for(j = wall->p.y; j <= i; j++)
+					tiles[wall->p.x][j] = 1;
+				wall->e1 = EXT_BUILT;
+			}
+		}else{
+			i = wall->p.x + wall->s1;
+			if(tiles[i][wall->p.y]){
+				for(j = wall->p.x; j <= i; j++)
+					tiles[j][wall->p.y] = 1;
+				wall->e1 = EXT_BUILT;
 			}
 		}
 	}
 
 	/* capture areas */
 	cons0 = cons1 = 1;
-	if((wall->e0 == WALL_BUILT && wall->e1 == WALL_INACTIVE) ||
-	   (wall->e1 == WALL_BUILT && wall->e0 == WALL_INACTIVE)){
-		wall->e0 = wall->e1 = WALL_INACTIVE;
-	}else if(wall->e0 == WALL_BUILT && wall->e1 == WALL_BUILT){
+	if((wall->e0 == EXT_BUILT && wall->e1 == EXT_INACTIVE) ||
+	   (wall->e1 == EXT_BUILT && wall->e0 == EXT_INACTIVE)){
+		wall->e0 = wall->e1 = EXT_INACTIVE;
+	}else if(wall->e0 == EXT_BUILT && wall->e1 == EXT_BUILT){
 		if(wall->o == VERT){
 			for(i = wall->s0; (cons0 || cons1) && i <= wall->s1; i++){
 				for(j = wall->p.x - 1; cons0 && !tiles[j][wall->p.y + i]; j--){
@@ -441,7 +459,7 @@ gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int
 				}
 			}
 		}
-		wall->e0 = wall->e1 = WALL_INACTIVE;
+		wall->e0 = wall->e1 = EXT_INACTIVE;
 	}
 
 	for(i = 0; i < nballs; i++){
@@ -470,6 +488,7 @@ gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int
 	return life;
 }
 
+/* the game thread */
 static void
 gamethread(void *)
 {
@@ -494,7 +513,7 @@ gamethread(void *)
 	haswon = 0;
 	captured = 0.0;
 	for(;;){
-		wall.e0 = wall.e1 = WALL_INACTIVE;
+		wall.e0 = wall.e1 = EXT_INACTIVE;
 		tilesinit(tiles);
 		tilesclear(tiles);
 		boardcalc(&orig, &fact);
@@ -516,11 +535,13 @@ gamethread(void *)
 				haswon = captured >= MINCAPTURED;
 				break;
 			case 1:
-				if(wall.e0 == WALL_INACTIVE && wall.e1 == WALL_INACTIVE){
+				if(wall.e0 == EXT_INACTIVE && wall.e1 == EXT_INACTIVE){
 					wall.p = gettile(click.p, orig, fact);
 					if(wall.p.x == 0 || wall.p.y == 0)
 						break;
-					wall.e0 = wall.e1 = WALL_BUILDING;
+					if(tiles[wall.p.x][wall.p.y])
+						break;
+					wall.e0 = wall.e1 = EXT_BUILDING;
 					wall.s0 = wall.s1 = 0;
 					wall.o = click.o;
 				}
@@ -538,6 +559,7 @@ gamethread(void *)
 	}
 }
 
+/* send 0 (no resizing occurred) via drawc to inform the game thread to redraw stuff */
 static void
 clockproc(void *)
 {
@@ -547,6 +569,19 @@ clockproc(void *)
 	}
 }
 
+/* send 1 (resizing occurred) via drawc to inform the game thread to redraw stuff and recompute board size */
+static void
+resizethread(void *)
+{
+	for(;;){
+		recvul(mctl->resizec);
+		if(getwindow(display, Refnone) < 0)
+			sysfatal("getwindow: %r");
+		sendul(drawc, 1);
+	}
+}
+
+/* send a click structure to the game thread when a button-1 click occurs */
 static void
 mousethread(void *)
 {
@@ -573,17 +608,7 @@ mousethread(void *)
 	}
 }
 
-static void
-resizethread(void *)
-{
-	for(;;){
-		recvul(mctl->resizec);
-		if(getwindow(display, Refnone) < 0)
-			sysfatal("getwindow: %r");
-		sendul(drawc, 1);
-	}
-}
-
+/* just handle Delete and q to quit */
 static void
 keyboardthread(void *)
 {
@@ -597,6 +622,7 @@ keyboardthread(void *)
 	}
 }
 
+/* 9ball: build walls to capture 70% of the grid without touching the balls */
 void
 threadmain(int, char *[])
 {
