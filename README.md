@@ -10,3 +10,7 @@ Controls:
 
 * Button 1: Build wall.
 * Button 3: Change building orientation (vertical to horizontal).
+
+License:
+
+This software is in public domain and is provided AS IS, with NO WARRANTY.
