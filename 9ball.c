@@ -266,7 +266,7 @@ statusdraw(int lvl, int nlives, double captured)
 	r.min.y = r.max.y - font->height;
 	draw(screen, r, barbgimg, nil, ZP);
 
-	snprint(buf, sizeof(buf), "lvl: %d; nlives: %d; captured: %.1f%%", lvl, nlives, captured * 100.0);
+	snprint(buf, sizeof(buf), "level: %d; lives: %d; captured: %.1f%%", lvl, nlives, captured * 100.0);
 	w = stringwidth(font, buf);
 	p.x = screen->r.min.x + (Dx(screen->r) - w) / 2;
 	p.y = screen->r.max.y - font->height;
