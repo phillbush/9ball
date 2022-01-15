@@ -627,9 +627,9 @@ keyboardthread(void *)
 
 /* 9ball: build walls to capture 60% of the grid without touching the balls */
 void
-threadmain(int, char *[])
+threadmain(int, char *argv[])
 {
-	if(initdraw(nil, nil, argv0) < 0)
+	if(initdraw(nil, nil, argv[0]) < 0)
 		sysfatal("initdraw: %r");
 	if((mctl = initmouse(nil, nil)) == nil)
 		sysfatal("initmouse: %r");
