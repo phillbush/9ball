@@ -2,6 +2,6 @@
 
 OFILES = 9ball.$O
 TARG   = 9ball
-BIN    = $home/bin/$objtype
+BIN    = /$objtype/bin/games
 
 </sys/src/cmd/mkone
