@@ -483,8 +483,12 @@ gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int
 		}
 
 		/* update ball position */
-		balls[i].p.x += balls[i].dx;
-		balls[i].p.y += balls[i].dy;
+		x = balls[i].p.x + balls[i].dx;
+		y = balls[i].p.y + balls[i].dy;
+		if(!tiles[x][y]){
+			balls[i].p.x += balls[i].dx;
+			balls[i].p.y += balls[i].dy;
+		}
 	}
 
 	return life;
