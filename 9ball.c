@@ -413,7 +413,7 @@ gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int
 		wall->e0 = wall->e1 = EXT_INACTIVE;
 	}else if(wall->e0 == EXT_BUILT && wall->e1 == EXT_BUILT){
 		if(wall->o == VERT){
-			for(i = wall->s0; (cons0 || cons1) && i <= wall->s1; i++){
+			for(i = wall->s0 + 1; (cons0 || cons1) && i < wall->s1; i++){
 				for(j = wall->p.x - 1; cons0 && !tiles[j][wall->p.y + i]; j--){
 					if(hasball(balls, nballs, j, wall->p.y + i)){
 						cons0 = 0;
@@ -427,7 +427,7 @@ gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int
 					}
 				}
 			}
-			for(i = wall->s0; (cons0 || cons1) && i <= wall->s1; i++){
+			for(i = wall->s0 + 1; (cons0 || cons1) && i < wall->s1; i++){
 				for(j = wall->p.x - 1; cons0 && !tiles[j][wall->p.y + i]; j--){
 					tiles[j][wall->p.y + i] = 1;
 				}
@@ -436,7 +436,7 @@ gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int
 				}
 			}
 		}else{
-			for(i = wall->s0; (cons0 || cons1) && i <= wall->s1; i++){
+			for(i = wall->s0 + 1; (cons0 || cons1) && i < wall->s1; i++){
 				for(j = wall->p.y - 1; cons0 && !tiles[wall->p.x + i][j]; j--){
 					if(hasball(balls, nballs, wall->p.x + i, j)){
 						cons0 = 0;
@@ -450,7 +450,7 @@ gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int
 					}
 				}
 			}
-			for(i = wall->s0; (cons0 || cons1) && i <= wall->s1; i++){
+			for(i = wall->s0 + 1; (cons0 || cons1) && i < wall->s1; i++){
 				for(j = wall->p.y - 1; cons0 && !tiles[wall->p.x + i][j]; j--){
 					tiles[wall->p.x + i][j] = 1;
 				}
