@@ -325,10 +325,10 @@ getcaptured(int tiles[TILESX][TILESY])
 static int
 gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int nballs)
 {
-	int i, j, x, y;
+	int i, j;
 	int life;
 	int cons0, cons1;
-	int bx, by;
+	int bx, by;             /* whether to bounce in x and y directions */
 
 	life = 0;
 
@@ -463,29 +463,23 @@ gameupdate(int tiles[TILESX][TILESY], struct Ball *balls, struct Wall *wall, int
 	}
 
 	for(i = 0; i < nballs; i++){
-		/* collision detection */
-		x = balls[i].p.x + balls[i].dx;
-		y = balls[i].p.y + balls[i].dy;
-		if(tiles[x][y]){
+		/* check whether to bounce, given current ball direction */
+		bx = by = 0;
+		if(tiles[balls[i].p.x + balls[i].dx][balls[i].p.y])
+			bx = 1;
+		if(tiles[balls[i].p.x][balls[i].p.y + balls[i].dy])
+			by = 1;
+		if(!bx && !by && tiles[balls[i].p.x + balls[i].dx][balls[i].p.y + balls[i].dy])
 			bx = by = 1;
-			if((balls[i].dy > 0 && !tiles[x][y - 1]) ||
-			   (balls[i].dy < 0 && !tiles[x][y + 1]))
-				bx = 0;
-			if((balls[i].dx > 0 && !tiles[x - 1][y]) ||
-			   (balls[i].dx < 0 && !tiles[x + 1][y]))
-				by = 0;
-			if(!bx && !by)
-				bx = by = 1;
-			if(bx)
-				balls[i].dx *= -1;
-			if(by)
-				balls[i].dy *= -1;
-		}
 
-		/* update ball position */
-		x = balls[i].p.x + balls[i].dx;
-		y = balls[i].p.y + balls[i].dy;
-		if(!tiles[x][y]){
+		/* update ball direction, if bouncing in that direction */
+		if(bx)
+			balls[i].dx *= -1;
+		if(by)
+			balls[i].dy *= -1;
+
+		/* update ball position, if new position is not captured */
+		if(!tiles[balls[i].p.x + balls[i].dx][balls[i].p.y + balls[i].dy]){
 			balls[i].p.x += balls[i].dx;
 			balls[i].p.y += balls[i].dy;
 		}
